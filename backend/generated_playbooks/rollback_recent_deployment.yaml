@@ -1,0 +1,35 @@
+- name: Rollback Recent Deployment for Catalog Service
+  hosts: all
+  become: true
+  vars:
+    app_service_name: catalog
+    app_root: /var/www/catalog_service
+    health_check_url: http://127.0.0.1:8080/health
+  tasks:
+  - name: Check if previous release exists
+    ansible.builtin.stat:
+      path: '{{ app_root }}/releases/previous'
+    register: previous_release_stat
+  - name: Fail if previous release is not found
+    ansible.builtin.fail:
+      msg: 'Cannot rollback: Previous release directory does not exist at {{ app_root
+        }}/releases/previous'
+    when: not previous_release_stat.stat.exists
+  - name: Point current release symlink to previous release
+    ansible.builtin.file:
+      src: '{{ app_root }}/releases/previous'
+      dest: '{{ app_root }}/current'
+      state: link
+      force: true
+  - name: Restart catalog service
+    ansible.builtin.systemd:
+      name: '{{ app_service_name }}'
+      state: restarted
+  - name: Verify service health post-rollback
+    ansible.builtin.uri:
+      url: '{{ health_check_url }}'
+      status_code: 200
+    register: health_result
+    until: health_result.status == 200
+    retries: 6
+    delay: 5

@@ -1,0 +1,29 @@
+- name: Warm Cache to Prevent Cache Stampede
+  hosts: all
+  gather_facts: false
+  vars:
+    cache_warm_base_url: http://127.0.0.1
+    cache_warm_endpoints:
+    - /
+    - /sitemap.xml
+    - /api/v1/health
+  tasks:
+  - name: Issue HTTP GET requests to populate cache
+    ansible.builtin.uri:
+      url: '{{ cache_warm_base_url }}{{ item }}'
+      method: GET
+      status_code:
+      - 200
+      - 301
+      - 302
+      - 304
+      timeout: 15
+    loop: '{{ cache_warm_endpoints }}'
+    register: warming_results
+    failed_when: false
+  - name: Verify cache warming request status
+    ansible.builtin.debug:
+      msg: Endpoint {{ item.item }} returned HTTP {{ item.status | default('N/A')
+        }}
+    loop: '{{ warming_results.results }}'
+    when: warming_results is defined and warming_results.results is defined

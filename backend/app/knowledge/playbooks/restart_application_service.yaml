@@ -1,0 +1,10 @@
+---
+- name: Restart application service
+  hosts: test_storefront
+  become: true
+
+  tasks:
+    - name: Restart storefront service
+      ansible.builtin.service:
+        name: storefront
+        state: restarted

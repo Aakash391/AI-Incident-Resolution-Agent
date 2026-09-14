@@ -1,0 +1,176 @@
+services:
+
+  # application:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/application/Dockerfile
+
+  #   container_name: incident-application
+
+  #   working_dir: /workspace/ai-incident-resolution-agent
+
+  #   volumes:
+  #     - .:/workspace/ai-incident-resolution-agent
+
+  #   ports:
+  #     - "8000:8000"
+
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+
+  #   env_file:
+  #     - ./backend/.env
+
+  #   environment:
+  #     DATABASE_URL: postgresql+psycopg://incident_user:incident_password@postgres:5432/incident_db
+  #     REDIS_URL: redis://redis:6379/0
+
+  #   stdin_open: true
+  #   tty: true
+
+  #   command: >
+  #     bash -c
+  #     "cd backend &&
+  #     uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # ==================================================
+  # Backend
+  # ==================================================
+
+  application:
+    build:
+      context: .
+      dockerfile: docker/application/Dockerfile
+
+    container_name: incident-application
+
+    working_dir: /workspace/ai-incident-resolution-agent
+
+    volumes:
+      - .:/workspace/ai-incident-resolution-agent
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+    env_file:
+      - ./backend/.env
+
+    environment:
+      DATABASE_URL: postgresql+psycopg://incident_user:incident_password@postgres:5432/incident_db
+      REDIS_URL: redis://redis:6379/0
+
+    stdin_open: true
+    tty: true
+
+    command:
+      [
+        "bash",
+        "-c",
+        "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      ]
+
+
+  # ==================================================
+  # Frontend
+  # ==================================================
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+
+    container_name: incident-frontend
+
+    working_dir: /workspace/ai-incident-resolution-agent/frontend
+
+    volumes:
+      - ./frontend:/workspace/ai-incident-resolution-agent/frontend
+      - frontend_node_modules:/workspace/ai-incident-resolution-agent/frontend/node_modules
+      - frontend_next:/workspace/ai-incident-resolution-agent/frontend/.next
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      application:
+        condition: service_started
+
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+
+    stdin_open: true
+    tty: true
+
+    command:
+      [
+        "npm",
+        "run",
+        "dev",
+        "--",
+        "--hostname",
+        "0.0.0.0"
+      ]
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: incident-postgres
+    environment:
+      POSTGRES_USER: incident_user
+      POSTGRES_PASSWORD: incident_password
+      POSTGRES_DB: incident_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U incident_user -d incident_db"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  redis:
+    image: redis:7
+
+    container_name: incident-redis
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+volumes:
+  frontend_node_modules:  
+  frontend_next:
+  postgres_data:
+  redis_data:

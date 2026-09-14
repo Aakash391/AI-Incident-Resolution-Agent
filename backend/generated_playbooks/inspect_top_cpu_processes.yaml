@@ -1,0 +1,12 @@
+- name: Inspect Top CPU Processes
+  hosts: all
+  gather_facts: false
+  tasks:
+  - name: Get top CPU-consuming processes
+    ansible.builtin.command:
+      cmd: ps -eo pid,user,%cpu,%mem,command --sort=-%cpu
+    register: top_cpu_processes
+    changed_when: false
+  - name: Display top CPU processes
+    ansible.builtin.debug:
+      msg: '{{ top_cpu_processes.stdout_lines[:15] }}'

@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+/* Map Tailwind's `dark:` variant to a `.dark` class on <html> so we can
+   control theming from JS (theme toggle) instead of OS-only. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                       */
+/* ------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+
+  --bg: oklch(0.975 0.003 247);
+  --surface: oklch(1 0 0);
+  --surface-subtle: oklch(0.97 0.003 247);
+  --border: oklch(0.923 0.005 247);
+  --border-strong: oklch(0.872 0.008 247);
+
+  --text: oklch(0.205 0.008 247);
+  --text-secondary: oklch(0.51 0.01 247);
+  --text-muted: oklch(0.65 0.01 247);
+
+  --accent: oklch(0.511 0.262 276);       /* indigo-600 */
+  --accent-strong: oklch(0.457 0.24 276); /* indigo-700 */
+  --accent-soft: oklch(0.947 0.04 276);   /* indigo-50 */
+  --accent-ink: oklch(0.414 0.23 276);    /* indigo-800 */
+
+  --ring: oklch(0.511 0.262 276 / 0.22);
+
+  --shadow-card:
+    0 1px 2px oklch(0.205 0.008 247 / 0.04),
+    0 1px 3px oklch(0.205 0.008 247 / 0.02);
+  --shadow-pop:
+    0 10px 30px -10px oklch(0.205 0.008 247 / 0.22),
+    0 2px 8px -2px oklch(0.205 0.008 247 / 0.08);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, "SFMono-Regular", "SF Mono", Menlo,
+    Consolas, "Liberation Mono", monospace;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --bg: oklch(0.185 0.008 262);
+  --surface: oklch(0.225 0.009 262);
+  --surface-subtle: oklch(0.26 0.01 262);
+  --border: oklch(0.31 0.012 262);
+  --border-strong: oklch(0.38 0.014 262);
+
+  --text: oklch(0.92 0.006 247);
+  --text-secondary: oklch(0.7 0.012 247);
+  --text-muted: oklch(0.56 0.014 247);
+
+  --accent: oklch(0.63 0.21 276);        /* indigo-400 */
+  --accent-strong: oklch(0.72 0.19 276); /* indigo-300 */
+  --accent-soft: oklch(0.3 0.045 276);   /* indigo-950/500 */
+  --accent-ink: oklch(0.88 0.05 276);
+
+  --ring: oklch(0.63 0.21 276 / 0.35);
+
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-pop:
+    0 14px 40px -12px oklch(0 0 0 / 0.6),
+    0 2px 10px -2px oklch(0 0 0 / 0.4);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* Subtle scrollbars that match the theme. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  background-color: var(--border-strong);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Reusable surface classes                                            */
+/* ------------------------------------------------------------------ */
+
+@layer components {
+  .surface-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.9rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .surface-card-hover {
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease;
+  }
+  .surface-card-hover:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-pop);
+  }
+
+  .form-field {
+    width: 100%;
+    border-radius: 0.6rem;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    padding: 0.55rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    outline: none;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .form-field::placeholder {
+    color: var(--text-muted);
+  }
+  .form-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+  .form-field:disabled {
+    background: var(--surface-subtle);
+    color: var(--text-muted);
+  }
+
+  textarea.form-field {
+    line-height: 1.55;
+  }
+
+  select.form-field {
+    cursor: pointer;
+  }
+}
+
+/* Small keyframe helpers used by spinners / live dots. */
+@keyframes a11y-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+.a11y-live-dot {
+  animation: a11y-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes a11y-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.a11y-spin {
+  animation: a11y-spin 0.8s linear infinite;
+}
